@@ -5,11 +5,6 @@ import { getCredentials } from './tls';
 import {ThenableWebDriver} from "selenium-webdriver";
 const { Builder, By } = require('selenium-webdriver');
 
-let driver: ThenableWebDriver = new Builder()
-  .forBrowser('chrome')
-  .setChromeOptions()
-  .build();
-
 const domain = 'example.com';
 const credentials = getCredentials(domain);
 
@@ -28,9 +23,14 @@ async function serve(req: http.IncomingMessage, res: http.ServerResponse) {
 
   res.writeHead(200, { "Content-Type": "text/html" });
 
+  const driver: ThenableWebDriver = new Builder()
+    .forBrowser('chrome')
+    .setChromeOptions()
+    .build();
+
   driver.get(parseUrl)
     .then(() => {
-      return new Promise(resolve => setTimeout(resolve, 2000));
+      return new Promise(resolve => setTimeout(resolve, 5000));
     })
     .then(() => {
       return driver.findElement(By.css('html'));
