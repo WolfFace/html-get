@@ -2,11 +2,11 @@ import http from 'http';
 import https from 'https';
 import url from 'url';
 import { getCredentials } from './tls';
-import {ThenableWebDriver} from "selenium-webdriver";
-const { Builder, By } = require('selenium-webdriver');
+import puppeteer from 'puppeteer';
 
 const domain = 'example.com';
 const credentials = getCredentials(domain);
+const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4182.0 Safari/537.36";
 
 http.createServer(serve).listen(80, '0.0.0.0', () => {
   console.log(`Server running at http://localhost`);
@@ -23,22 +23,15 @@ async function serve(req: http.IncomingMessage, res: http.ServerResponse) {
 
   res.writeHead(200, { "Content-Type": "text/html" });
 
-  const driver: ThenableWebDriver = new Builder()
-    .forBrowser('chrome')
-    .setChromeOptions()
-    .build();
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.setUserAgent(userAgent);
+  await page.goto(parseUrl, { waitUntil: 'networkidle0' });
 
-  driver.get(parseUrl)
-    .then(() => {
-      return new Promise(resolve => setTimeout(resolve, 5000));
-    })
-    .then(() => {
-      return driver.findElement(By.css('html'));
-    })
-    .then(element => {
-      return element.getAttribute('outerHTML');
-    })
-    .then(htmlStr => {
-      res.end(htmlStr);
-    });
+  // @ts-ignore
+  const data = await page.evaluate(() => document.querySelector('*').outerHTML);
+
+  await browser.close();
+
+  res.end(data);
 }
